@@ -5,7 +5,21 @@ import { db } from "@/firebase/admin";
 import { getRandomInterviewCover } from "@/lib/utils";
 
 export async function POST(request: Request) {
-  const { type, role, level, techstack, amount, userid } = await request.json();
+  const body = await request.json();
+  
+  // Extract from new VAPI assistant tool format OR fall back to old workflow format
+  let params;
+  
+  if (body?.message?.toolCallList?.[0]?.function?.arguments) {
+    // New VAPI assistant format - arguments is a JSON string
+    const argsString = body.message.toolCallList[0].function.arguments;
+    params = JSON.parse(argsString);
+  } else {
+    // Old workflow format - direct body
+    params = body;
+  }
+  
+  const { type, role, level, techstack, amount, userid } = params;
 
   try {
     const { text: questions } = await generateText({
@@ -49,3 +63,4 @@ export async function POST(request: Request) {
 export async function GET() {
   return Response.json({ success: true, data: "Thank you!" }, { status: 200 });
 }
+
